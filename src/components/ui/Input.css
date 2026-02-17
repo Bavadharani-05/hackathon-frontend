@@ -1,0 +1,103 @@
+/* Input Component Styles */
+
+.input-wrapper {
+    width: 100%;
+    margin-bottom: var(--space-lg);
+}
+
+.input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input {
+    width: 100%;
+    padding: var(--space-md) var(--space-lg);
+    font-size: var(--text-base);
+    color: var(--text-primary);
+    background: var(--bg-glass);
+    border: 2px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-base);
+    outline: none;
+}
+
+.input:focus {
+    border-color: var(--primary-400);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+.input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Input with icon */
+.input-with-icon {
+    padding-left: 48px;
+}
+
+.input-icon {
+    position: absolute;
+    left: var(--space-md);
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: color var(--transition-base);
+}
+
+.input:focus+.input-icon {
+    color: var(--primary-400);
+}
+
+/* Floating label */
+.input-label {
+    position: absolute;
+    left: var(--space-lg);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: var(--text-base);
+    pointer-events: none;
+    transition: all var(--transition-base);
+    background: transparent;
+    padding: 0 var(--space-xs);
+}
+
+.input-label-float {
+    top: 0;
+    transform: translateY(-50%);
+    font-size: var(--text-sm);
+    color: var(--primary-400);
+    background: var(--bg-primary);
+}
+
+.input:focus~.input-label {
+    top: 0;
+    transform: translateY(-50%);
+    font-size: var(--text-sm);
+    color: var(--primary-400);
+    background: var(--bg-primary);
+}
+
+/* Error state */
+.input-error .input {
+    border-color: var(--danger);
+}
+
+.input-error .input:focus {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.input-error-text {
+    display: block;
+    margin-top: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--danger);
+}
+
+/* Password visibility toggle would go here if needed */

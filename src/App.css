@@ -1,0 +1,39 @@
+/* Import design system */
+@import './styles/variables.css';
+@import './styles/global.css';
+@import './styles/animations.css';
+
+/* App root container */
+#root {
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* App layout with sidebar */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-main {
+    flex: 1;
+    margin-left: 280px;
+    padding: var(--space-2xl);
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+@media (max-width: 768px) {
+    .app-main {
+        margin-left: 0;
+        padding: var(--space-lg);
+        padding-top: 80px;
+        /* Account for mobile menu button */
+    }
+}

@@ -1,0 +1,134 @@
+/* Homework Page Styles */
+
+.homework-columns {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-xl);
+    margin-top: var(--space-2xl);
+}
+
+.homework-column {
+    background: var(--bg-glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    min-height: 500px;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.column-header h2 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin: 0;
+    flex: 1;
+}
+
+.column-icon {
+    flex-shrink: 0;
+}
+
+.column-icon.pending {
+    color: var(--danger);
+}
+
+.column-icon.progress {
+    color: var(--warning);
+}
+
+.column-icon.submitted {
+    color: var(--info);
+}
+
+.column-icon.graded {
+    color: var(--success);
+}
+
+.homework-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.homework-card {
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.homework-card-header {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.homework-title {
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.homework-meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.homework-meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.homework-grade {
+    background: var(--bg-glass);
+    padding: var(--space-md);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--glass-border);
+}
+
+.grade-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-primary);
+    color: white;
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.grade-feedback {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 1280px) {
+    .homework-columns {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .homework-columns {
+        grid-template-columns: 1fr;
+    }
+}
