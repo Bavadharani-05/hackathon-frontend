@@ -7,7 +7,7 @@ import Button from './ui/Button';
 import Avatar from './ui/Avatar';
 import './VideoRoom.css';
 
-const SOCKET_SERVER = 'hackathon-web-socket-server.vercel.app';
+const SOCKET_SERVER = 'https://hackathon-web-socket-server.onrender.com';
 
 export default function VideoRoom({ classInfo, onClose }) {
     const { user } = useAuth();
