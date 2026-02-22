@@ -124,6 +124,13 @@ io.on('connection', (socket) => {
         });
     });
 
+    // Handle student image analysis (students call API, send response to teacher)
+    socket.on('student-send-analysis', ({ classId, peerId, apiResponse }) => {
+        if (classId && peerId != null && apiResponse != null) {
+            socket.to(classId).emit('student-analysis-update', { peerId, apiResponse });
+        }
+    });
+
     // Handle leave class
     socket.on('leave-class', ({ classId }) => {
         const room = rooms.get(classId);

@@ -14,6 +14,46 @@
     animation: fadeIn 0.3s ease-out;
 }
 
+/* Separate capture window for students - visible (required for browser to render frames) */
+.video-room-capture-panel {
+    position: fixed;
+    bottom: var(--space-lg);
+    right: var(--space-lg);
+    z-index: var(--z-modal);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.video-room-capture-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    font-weight: var(--font-medium);
+}
+
+.video-room-capture-panel-inner {
+    position: relative;
+    width: 160px;
+    height: 120px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    visibility: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.video-room-capture-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.video-room-capture-canvas {
+    display: none;
+}
+
 .video-room {
     width: 100%;
     height: 100%;
@@ -361,8 +401,202 @@
     border-color: var(--primary-400);
 }
 
+/* Student list panel (teacher view) */
+.video-students-panel {
+    width: 280px;
+    min-width: 280px;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.students-panel-header {
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+}
+
+.students-panel-header h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.students-count {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-muted);
+    background: var(--bg-glass);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+}
+
+.students-panel-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.students-panel-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    padding: var(--space-xl);
+    margin: 0;
+}
+
+.student-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.student-card:hover {
+    border-color: var(--primary-400);
+    box-shadow: var(--shadow-sm);
+}
+
+.student-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.student-card-avatar {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.student-card-snapshot {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.student-card-metrics {
+    margin-top: 0;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.student-metric {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.student-metric-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    min-width: 68px;
+    flex-shrink: 0;
+}
+
+.student-metric-bar-wrap {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-glass);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.student-metric-bar {
+    height: 100%;
+    width: var(--metric-width, 0%);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-base), background-color var(--transition-fast);
+}
+
+.student-metric-fill.level-high {
+    background: linear-gradient(90deg, var(--success-dark), var(--success));
+}
+
+.student-metric-fill.level-medium {
+    background: linear-gradient(90deg, var(--warning-dark), var(--warning));
+}
+
+.student-metric-fill.level-low {
+    background: linear-gradient(90deg, var(--danger-dark), var(--danger));
+}
+
+.student-metric-value {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    min-width: 36px;
+    text-align: right;
+}
+
+.student-metric-badge {
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    text-align: center;
+}
+
+.student-metric-badge.device-clear {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success);
+}
+
+.student-metric-badge.device-detected {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.student-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.student-card-name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.student-card-status {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
+    .video-students-panel {
+        width: 240px;
+        min-width: 240px;
+    }
+
     .video-chat {
         position: absolute;
         right: 0;
@@ -383,6 +617,15 @@
 }
 
 @media (max-width: 768px) {
+    .video-students-panel {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 9;
+        box-shadow: var(--shadow-xl);
+    }
+
     .video-room-main {
         padding: var(--space-md);
     }

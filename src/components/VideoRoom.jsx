@@ -25,6 +25,11 @@ export default function VideoRoom({ classInfo, onClose }) {
     const [isConnected, setIsConnected] = useState(false);
     const [peerStreams, setPeerStreams] = useState({});
     const [myPeerId, setMyPeerId] = useState(null);
+    const [studentApiResponses, setStudentApiResponses] = useState({});
+    const captureVideoRef = useRef(null);
+    const captureCanvasRef = useRef(null);
+    const captureStreamRef = useRef(null);
+    const [captureStreamReady, setCaptureStreamReady] = useState(false);
 
     // Get user media (webcam + mic)
     useEffect(() => {
@@ -49,13 +54,40 @@ export default function VideoRoom({ classInfo, onClose }) {
         getMedia();
 
         return () => {
-            // Cleanup local stream
             if (localStreamRef.current) {
                 localStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+            if (captureStreamRef.current) {
+                captureStreamRef.current.getTracks().forEach(track => track.stop());
             }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Students: separate capture stream (always-on video for compulsory 5s snapshots regardless of main video toggle)
+    useEffect(() => {
+        if (user?.role !== 'student') return;
+
+        const getCaptureStream = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 160, height: 120 }
+                });
+                captureStreamRef.current = stream;
+                setCaptureStreamReady(true);
+            } catch (err) {
+                console.error('Capture stream failed:', err);
+            }
+        };
+        getCaptureStream();
+        return () => {
+            if (captureStreamRef.current) {
+                captureStreamRef.current.getTracks().forEach(track => track.stop());
+                captureStreamRef.current = null;
+                setCaptureStreamReady(false);
+            }
+        };
+    }, [user?.role]);
 
     // Initialize PeerJS and Socket.io
     useEffect(() => {
@@ -140,6 +172,69 @@ export default function VideoRoom({ classInfo, onClose }) {
         };
     }, [isConnected]);
 
+    // Assign capture stream to video when ready
+    useEffect(() => {
+        const video = captureVideoRef.current;
+        const stream = captureStreamRef.current;
+        if (video && stream && user?.role === 'student') {
+            video.srcObject = stream;
+        }
+    }, [captureStreamReady, user?.role]);
+
+    const IMAGE_ANALYZER_API = 'https://bavadharani05-image-analyzer.hf.space/predict';
+
+    // Student: capture → API call → send response to teacher → capture next (API-driven cycle, no timer)
+    useEffect(() => {
+        if (user?.role !== 'student' || !isConnected || !captureStreamReady || !socketRef.current || !classInfo?.id || !myPeerId) return;
+
+        let cancelled = false;
+
+        const captureAndAnalyze = async () => {
+            const video = captureVideoRef.current;
+            const canvas = captureCanvasRef.current;
+            if (!video || !canvas || !video.srcObject || video.videoWidth === 0 || cancelled) return;
+
+            const ctx = canvas.getContext('2d');
+            const w = 160;
+            const h = 120;
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(video, 0, 0, w, h);
+            const base64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+            if (!base64 || cancelled) return;
+
+            try {
+                const apiResponse = await fetch(IMAGE_ANALYZER_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image_base64: base64 })
+                });
+                if (cancelled) return;
+
+                const data = await apiResponse.json();
+                if (cancelled) return;
+
+                socketRef.current?.emit('student-send-analysis', {
+                    classId: classInfo.id,
+                    peerId: myPeerId,
+                    apiResponse: data
+                });
+            } catch (err) {
+                console.error('Image analysis API failed:', err);
+            }
+
+            if (!cancelled) {
+                setTimeout(captureAndAnalyze, 0);
+            }
+        };
+
+        captureAndAnalyze();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user?.role, isConnected, captureStreamReady, classInfo?.id, myPeerId]);
+
     const connectToSocket = (peerId) => {
         socketRef.current = io(SOCKET_SERVER, {
             transports: ['websocket'],
@@ -201,6 +296,13 @@ export default function VideoRoom({ classInfo, onClose }) {
         socketRef.current.on('user-left', (data) => {
             console.log('User left:', data.name);
             setParticipants(prev => prev.filter(p => p.id !== data.id));
+            if (data.peerId) {
+                setStudentApiResponses(prev => {
+                    const next = { ...prev };
+                    delete next[data.peerId];
+                    return next;
+                });
+            }
 
             // Remove stream
             if (data.peerId) {
@@ -231,6 +333,16 @@ export default function VideoRoom({ classInfo, onClose }) {
             setParticipants(prev => prev.map(p =>
                 p.id === update.id ? { ...p, ...update } : p
             ));
+        });
+
+        // Teacher: receive student image analysis API response updates
+        socketRef.current.on('student-analysis-update', (data) => {
+            if (data?.peerId != null && data?.apiResponse != null) {
+                setStudentApiResponses(prev => ({
+                    ...prev,
+                    [data.peerId]: data.apiResponse
+                }));
+            }
         });
     };
 
@@ -340,6 +452,8 @@ export default function VideoRoom({ classInfo, onClose }) {
     // Get teacher from participants or use default
     const teacher = participants.find(p => p.role === 'teacher') || { name: classInfo.teacher };
     const otherParticipants = participants.filter(p => p.peerId !== myPeerId);
+    const studentsList = participants.filter(p => p.role === 'student');
+    const isTeacher = user?.role === 'teacher';
 
     return (
         <div className="video-room-overlay">
@@ -362,21 +476,22 @@ export default function VideoRoom({ classInfo, onClose }) {
                     </div>
                 </div>
 
-                <button
-                    onClick={handlePingAll}
-                    style={{
-                        position: 'relative',
-                        padding: '8px 16px',
-                        backgroundColor: '#6366f1',
-                        color: 'white',
-                        borderRadius: '6px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontWeight: 'bold'
-                    }}
-                >
-                    Ping Everyone
-                </button>
+                {/* Separate capture window for students - compulsory 5s snapshots (must be visible for capture to work) */}
+                {user?.role === 'student' && (
+                    <div className="video-room-capture-panel">
+                        <span className="video-room-capture-label">Capture for teacher</span>
+                        <div className="video-room-capture-panel-inner">
+                            <video
+                                ref={captureVideoRef}
+                                autoPlay
+                                playsInline
+                                muted
+                                className="video-room-capture-video"
+                            />
+                            <canvas ref={captureCanvasRef} className="video-room-capture-canvas" />
+                        </div>
+                    </div>
+                )}
 
                 {/* Main content */}
                 <div className="video-room-content">
@@ -409,14 +524,14 @@ export default function VideoRoom({ classInfo, onClose }) {
                             <div className="video-thumbnail your-video">
                                 {isVideoOn && localStreamRef.current ? (
                                     <video
-                                        autoPlay
-                                        muted
-                                        playsInline
                                         ref={(video) => {
                                             if (video && localStreamRef.current) {
                                                 video.srcObject = localStreamRef.current;
                                             }
                                         }}
+                                        autoPlay
+                                        muted
+                                        playsInline
                                         className="webcam-stream"
                                         style={{ transform: 'scaleX(-1)' }}
                                     />
@@ -499,6 +614,74 @@ export default function VideoRoom({ classInfo, onClose }) {
                             </button>
                         </div>
                     </div>
+
+                    {/* Student list panel (teacher only) */}
+                    {isTeacher && (
+                        <aside className="video-students-panel">
+                            <div className="students-panel-header">
+                                <h4>Students</h4>
+                                <span className="students-count">{studentsList.length}</span>
+                            </div>
+                            <div className="students-panel-list">
+                                {studentsList.length === 0 ? (
+                                    <p className="students-panel-empty">No students in class yet</p>
+                                ) : (
+                                    studentsList.map((student) => (
+                                        <div key={student.id} className={`student-card ${studentApiResponses[student.peerId] ? 'student-card-with-metrics' : ''}`}>
+                                            <div className="student-card-header">
+                                                <div className="student-card-avatar">
+                                                    <Avatar name={student.name} size="md" />
+                                                </div>
+                                                <div className="student-card-info">
+                                                    <span className="student-card-name">{student.name}</span>
+                                                    <span className="student-card-status">
+                                                        {student.isMuted ? '🔇 Muted' : '🎤 Active'}
+                                                        {student.isVideoOn ? ' • 📹 Video on' : ' • 📹 Video off'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {studentApiResponses[student.peerId] && (() => {
+                                                    const data = studentApiResponses[student.peerId];
+                                                    const confidence = data.confidence_level ?? 0;
+                                                    const attention = data.attention_level ?? 0;
+                                                    const thinking = data.thinking_level ?? 0;
+                                                    const deviceDetected = data.isDeviceDetected ?? false;
+                                                    const getLevelColor = (val) => val >= 80 ? 'level-high' : val >= 60 ? 'level-medium' : 'level-low';
+                                                    return (
+                                                        <div className="student-card-metrics">
+                                                            <div className="student-metric">
+                                                                <span className="student-metric-label">Confidence</span>
+                                                                <div className="student-metric-bar-wrap">
+                                                                    <div className={`student-metric-bar student-metric-fill ${getLevelColor(confidence)}`} style={{ '--metric-width': `${confidence}%` }} />
+                                                                </div>
+                                                                <span className="student-metric-value">{confidence}%</span>
+                                                            </div>
+                                                            <div className="student-metric">
+                                                                <span className="student-metric-label">Attention</span>
+                                                                <div className="student-metric-bar-wrap">
+                                                                    <div className={`student-metric-bar student-metric-fill ${getLevelColor(attention)}`} style={{ '--metric-width': `${attention}%` }} />
+                                                                </div>
+                                                                <span className="student-metric-value">{attention}%</span>
+                                                            </div>
+                                                            <div className="student-metric">
+                                                                <span className="student-metric-label">Thinking</span>
+                                                                <div className="student-metric-bar-wrap">
+                                                                    <div className={`student-metric-bar student-metric-fill ${getLevelColor(thinking)}`} style={{ '--metric-width': `${thinking}%` }} />
+                                                                </div>
+                                                                <span className="student-metric-value">{thinking}%</span>
+                                                            </div>
+                                                            <div className={`student-metric-badge ${deviceDetected ? 'device-detected' : 'device-clear'}`}>
+                                                                {deviceDetected ? '📱 Device detected' : '✓ No device'}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </aside>
+                    )}
 
                     {/* Chat sidebar */}
                     {showChat && (
