@@ -115,6 +115,31 @@ export default function VideoRoom({ classInfo, onClose }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const handlePingAll = () => {
+        if (socketRef.current && isConnected) {
+            socketRef.current.emit('send-ping', {
+                classId: classInfo.id,
+                message: `Hello from ${user?.name || 'Anonymous'}!`,
+            });
+        }
+    };
+
+    // 2. Setup the listener to catch the message and log it
+    useEffect(() => {
+        if (!socketRef.current) return;
+
+        const socket = socketRef.current;
+
+        socket.on('receive-ping', (data) => {
+            console.log('hi'); // As requested
+            console.log('Message Received:', data.message);
+        });
+
+        return () => {
+            socket.off('receive-ping');
+        };
+    }, [isConnected]);
+
     const connectToSocket = (peerId) => {
         socketRef.current = io(SOCKET_SERVER, {
             transports: ['websocket'],
@@ -336,6 +361,22 @@ export default function VideoRoom({ classInfo, onClose }) {
                         </button>
                     </div>
                 </div>
+
+                <button
+                    onClick={handlePingAll}
+                    style={{
+                        position: 'relative',
+                        padding: '8px 16px',
+                        backgroundColor: '#6366f1',
+                        color: 'white',
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Ping Everyone
+                </button>
 
                 {/* Main content */}
                 <div className="video-room-content">

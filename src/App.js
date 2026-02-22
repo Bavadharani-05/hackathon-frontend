@@ -8,7 +8,10 @@ import ClassesPage from './pages/ClassesPage';
 import TestPage from './pages/TestPage';
 import HomeworkPage from './pages/HomeworkPage';
 import DashboardPage from './pages/DashboardPage';
+import ImageToBase64 from './pages/ImageToBase64';
+import WebcamEmotionTracker from './pages/WebcamEmotionTracker';
 import './App.css';
+import WebcamEmotionTrackerTwo from './pages/WebcamEmotionTrackerTwo';
 
 function App() {
     return (
@@ -18,6 +21,9 @@ function App() {
                     <Routes>
                         {/* Public route */}
                         <Route path="/login" element={<LoginPage />} />
+                        <Route path="/img" element={<ImageToBase64 />} />
+                        <Route path="/cam" element={<WebcamEmotionTracker />} />
+                        <Route path="/cam2" element={<WebcamEmotionTrackerTwo />} />
 
                         {/* Protected routes with sidebar */}
                         <Route
