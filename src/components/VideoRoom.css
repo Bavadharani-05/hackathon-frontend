@@ -227,7 +227,7 @@
     font-weight: var(--font-medium);
 }
 
-/* Controls */
+/* Controls - z-index above capture panel so Leave button stays clickable */
 .video-controls {
     display: flex;
     align-items: center;
@@ -235,6 +235,8 @@
     padding: var(--space-lg);
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
+    position: relative;
+    z-index: calc(var(--z-modal) + 1);
 }
 
 .controls-group {

@@ -65,13 +65,20 @@ export default function VideoRoom({ classInfo, onClose }) {
     }, []);
 
     // Students: separate capture stream (always-on video for compulsory 5s snapshots regardless of main video toggle)
+    // Use front camera (facingMode: 'user') on mobile - back camera is often the default there
     useEffect(() => {
         if (user?.role !== 'student') return;
 
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+
         const getCaptureStream = async () => {
             try {
+                const videoConstraints = { width: 160, height: 120 };
+                if (isMobile) {
+                    videoConstraints.facingMode = 'user';
+                }
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 160, height: 120 }
+                    video: videoConstraints
                 });
                 captureStreamRef.current = stream;
                 setCaptureStreamReady(true);
@@ -459,7 +466,7 @@ export default function VideoRoom({ classInfo, onClose }) {
 
     const handleLeave = () => {
         if (window.confirm('Are you sure you want to leave the class?')) {
-            if (socketRef.current) {
+            if (socketRef.current && classInfo?.id) {
                 socketRef.current.emit('leave-class', { classId: classInfo.id });
             }
             onClose();
