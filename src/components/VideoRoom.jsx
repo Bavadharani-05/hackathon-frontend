@@ -172,27 +172,38 @@ export default function VideoRoom({ classInfo, onClose }) {
         };
     }, [isConnected]);
 
-    // Assign capture stream to video when ready
+    const RETRY_DELAY_MS = 800;
+
+    // Assign capture stream to video when ready; explicit play() for mobile autoplay
     useEffect(() => {
         const video = captureVideoRef.current;
         const stream = captureStreamRef.current;
         if (video && stream && user?.role === 'student') {
             video.srcObject = stream;
+            video.play().catch(() => {});
         }
     }, [captureStreamReady, user?.role]);
 
     const IMAGE_ANALYZER_API = 'https://bavadharani05-image-analyzer.hf.space/predict';
 
-    // Student: capture → API call → send response to teacher → capture next (API-driven cycle, no timer)
+    // Student: capture → API call → send response to teacher → capture next (API-driven cycle)
+    // Retry when video not ready - fixes startup race and mobile issues
     useEffect(() => {
         if (user?.role !== 'student' || !isConnected || !captureStreamReady || !socketRef.current || !classInfo?.id || !myPeerId) return;
 
         let cancelled = false;
+        let retryTimeoutId = null;
 
         const captureAndAnalyze = async () => {
+            if (cancelled) return;
+
             const video = captureVideoRef.current;
             const canvas = captureCanvasRef.current;
-            if (!video || !canvas || !video.srcObject || video.videoWidth === 0 || cancelled) return;
+
+            if (!video || !canvas || !video.srcObject || video.videoWidth === 0) {
+                retryTimeoutId = setTimeout(captureAndAnalyze, RETRY_DELAY_MS);
+                return;
+            }
 
             const ctx = canvas.getContext('2d');
             const w = 160;
@@ -201,7 +212,10 @@ export default function VideoRoom({ classInfo, onClose }) {
             canvas.height = h;
             ctx.drawImage(video, 0, 0, w, h);
             const base64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-            if (!base64 || cancelled) return;
+            if (!base64 || cancelled) {
+                retryTimeoutId = setTimeout(captureAndAnalyze, RETRY_DELAY_MS);
+                return;
+            }
 
             try {
                 const apiResponse = await fetch(IMAGE_ANALYZER_API, {
@@ -221,17 +235,20 @@ export default function VideoRoom({ classInfo, onClose }) {
                 });
             } catch (err) {
                 console.error('Image analysis API failed:', err);
+                if (!cancelled) retryTimeoutId = setTimeout(captureAndAnalyze, RETRY_DELAY_MS);
+                return;
             }
 
             if (!cancelled) {
-                setTimeout(captureAndAnalyze, 0);
+                retryTimeoutId = setTimeout(captureAndAnalyze, 0);
             }
         };
 
-        captureAndAnalyze();
+        retryTimeoutId = setTimeout(captureAndAnalyze, 500);
 
         return () => {
             cancelled = true;
+            if (retryTimeoutId) clearTimeout(retryTimeoutId);
         };
     }, [user?.role, isConnected, captureStreamReady, classInfo?.id, myPeerId]);
 
