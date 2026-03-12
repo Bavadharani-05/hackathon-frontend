@@ -360,15 +360,8 @@ export default function VideoRoom({ classInfo, onClose }) {
         });
 
         // Teacher: receive student image analysis API response updates
-        // Skip the model's cold-start default (all metrics at 50) so bars always start from 0
         socketRef.current.on('student-analysis-update', (data) => {
             if (data?.peerId != null && data?.apiResponse != null) {
-                const r = data.apiResponse;
-                const isWarmupDefault =
-                    (r.attention_level ?? -1) === 50 &&
-                    (r.confidence_level ?? -1) === 50 &&
-                    (r.thinking_level ?? -1) === 50;
-                if (isWarmupDefault) return; // discard cold-start placeholder
                 setStudentApiResponses(prev => ({
                     ...prev,
                     [data.peerId]: data.apiResponse
