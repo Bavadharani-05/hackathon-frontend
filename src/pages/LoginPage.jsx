@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock } from 'lucide-react';
+// import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -123,23 +123,23 @@ export default function LoginPage() {
 
                     <form onSubmit={handleSubmit}>
                         <Input
-                            type="email"
+                            // type="email"
                             label="Email Address"
-                            placeholder="you@example.com"
+                            // placeholder="you@example.com"
                             value={formData.email}
                             onChange={(e) => handleChange('email', e.target.value)}
                             error={errors.email}
-                            icon={Mail}
+                        // icon={Mail}
                         />
 
                         <Input
-                            type="password"
+                            // type="password"
                             label="Password"
-                            placeholder="••••••••"
+                            // placeholder="••••••••"
                             value={formData.password}
                             onChange={(e) => handleChange('password', e.target.value)}
                             error={errors.password}
-                            icon={Lock}
+                        // icon={Lock}
                         />
 
                         <div className="login-options">
